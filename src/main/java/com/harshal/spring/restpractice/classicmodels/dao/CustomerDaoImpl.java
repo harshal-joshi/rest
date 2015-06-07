@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -47,7 +46,7 @@ public class CustomerDaoImpl implements CustomerDao{
 		CustomerResponse response = new CustomerResponse();
 		Map<String,Object> paramMap = new HashMap<String,Object>();
 		paramMap.put("offset", offset);
-		paramMap.put("limit", offset+(limit-1));
+		paramMap.put("limit", offset+limit);
 		List<Customer> customers = parametrisedJdbcTemplate.query(sql, paramMap, new RowMapper<Customer>(){
 
 			public Customer mapRow(ResultSet resultSet, int rowNum)
@@ -76,14 +75,17 @@ public class CustomerDaoImpl implements CustomerDao{
 		
 		if(flag)
 		{
-			response.add(linkTo(methodOn(CustomerController.class).customers(1, 5)).withRel("first"));
-			response.add(linkTo(methodOn(CustomerController.class).customers(offset+limit, limit)).withRel("next"));
-			if(offset-limit>0)
+			int last = getLastOffset("SELECT COUNT(*) FROM customers ORDER BY customerNumber", limit);
+			response.add(linkTo(methodOn(CustomerController.class).customers(0, limit)).withRel("first"));
+			if(offset+limit<last)
+			{
+				response.add(linkTo(methodOn(CustomerController.class).customers(offset+limit, limit)).withRel("next"));
+			}
+			if(offset-limit>=0)
 			{
 				response.add(linkTo(methodOn(CustomerController.class).customers(offset-limit, limit)).withRel("prev"));
 			}
-			int last = getLastOffset("SELECT COUNT(*) FROM customers", limit);
-			response.add(linkTo(methodOn(CustomerController.class).customers(last, last+limit)).withRel("last"));
+			response.add(linkTo(methodOn(CustomerController.class).customers(last, limit)).withRel("last"));
 		}
 		return response;
 	}
@@ -119,7 +121,6 @@ public class CustomerDaoImpl implements CustomerDao{
 			}catch(EmptyResultDataAccessException ex) {
 				throw new CustomerNotFoundException(customerId);
 			}catch (DataAccessException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
@@ -133,6 +134,8 @@ public class CustomerDaoImpl implements CustomerDao{
 				+ "addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit) VALUES ("
 				+ ":customerNumber, :customerName, :contactLastName, :contactFirstName, :phone, :addressLine1, "
 				+ ":addressLine2, :city, :state, :postalCode, :country, :salesRepEmployeeNumber, :creditLimit)";
+		
+		int count= 0;
 		
 		Map<String,Object> paramMap = new HashMap<String,Object>();
 		paramMap.put("customerNumber", customer.getCustomerId());
@@ -149,7 +152,7 @@ public class CustomerDaoImpl implements CustomerDao{
 		paramMap.put("salesRepEmployeeNumber", customer.getSalesRepEmployeeNumber());
 		paramMap.put("creditLimit", customer.getCreditLimit());
 		
-		int count = parametrisedJdbcTemplate.update(sql, paramMap);
+		count = parametrisedJdbcTemplate.update(sql, paramMap);
 		
 		System.out.println("count ::"+count);
 		
@@ -165,13 +168,12 @@ public class CustomerDaoImpl implements CustomerDao{
 	}
 
 	public Customer updateCustomerDetails(Customer customer) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	private int getLastOffset(String sql, int limit){
 		int count = jdbcTemplate.queryForInt(sql);
 		int div = count/limit;
-		return ((div*limit)+1);
+		return div*limit;
 	}
 }
