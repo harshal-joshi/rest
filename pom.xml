@@ -21,7 +21,7 @@
 		<servlet.version>3.0.1</servlet.version>
 
 		<!-- Spring -->
-		<spring-framework.version>4.0.0.RELEASE</spring-framework.version>
+		<spring-framework.version>4.1.2.RELEASE</spring-framework.version>
 		<spring-hateoas.version>0.17.0.RELEASE</spring-hateoas.version>
 
 		<!-- Logging -->
@@ -79,7 +79,13 @@
 			<version>1.10.19</version>
 			<scope>test</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+			<version>2.0.0</version>
+			<scope>test</scope>
+		</dependency>
+		
 		<!-- Spring dependencies -->
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -134,7 +140,7 @@
 			<artifactId>jackson-mapper-asl</artifactId>
 			<version>1.9.13</version>
 		</dependency>
-		
+
 		<!-- MySQL JDBC Connector -->
 		<dependency>
 			<groupId>mysql</groupId>
