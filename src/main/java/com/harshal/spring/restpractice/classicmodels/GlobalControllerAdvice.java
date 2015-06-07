@@ -2,6 +2,7 @@ package com.harshal.spring.restpractice.classicmodels;
 
 import java.util.Optional;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.hateoas.VndErrors;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,13 @@ public class GlobalControllerAdvice {
 	@ExceptionHandler(CustomerNotFoundException.class)
 	ResponseEntity<VndErrors> customerNotFoundException(CustomerNotFoundException exception) {
 		return error(exception, HttpStatus.NOT_FOUND, exception.getCustomerId() + "");
+	}
+	
+	@ExceptionHandler(DataAccessException.class)
+	ResponseEntity<VndErrors> dataAccessException(DataAccessException exception) {
+		HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(this.vndErrorMediaType);
+		return new ResponseEntity<>(new VndErrors("DB_ERROR", exception.getRootCause().getMessage()), httpHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	
 	private <E extends Exception> ResponseEntity<VndErrors> error(E e, HttpStatus httpStatus, String logref) {
