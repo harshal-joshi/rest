@@ -1,5 +1,12 @@
 package com.harshal.spring.restpractice.classicmodels;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,8 +23,6 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import com.harshal.spring.restpractice.classicmodels.dao.CustomerDao;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"classpath:application-config.xml"})
@@ -26,9 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class CustomerControllerTest {
 
 	private MockMvc mockMvc;
-	
-	/*@Autowired
-	private CustomerDao customerDao;*/
 	
 	@Autowired
 	private WebApplicationContext webApplicationContext;
@@ -42,7 +44,31 @@ public class CustomerControllerTest {
 	
 	@Test
 	public void customers_test() throws Exception{
-		mockMvc.perform(get("/customers").accept(MediaType.APPLICATION_JSON_VALUE)).andExpect(status().isOk());
-		//.andExpect(content().contentType("application/json"));
+		mockMvc.perform(get("/customers").accept(MediaType.APPLICATION_JSON_VALUE))
+		.andExpect(status().isOk())
+		.andExpect(jsonPath("$.customers", hasSize(124)))
+		.andExpect(jsonPath("$.customers[0].customerName",is("Atelier graphique")))
+		.andExpect(jsonPath("$.customers[0].links[0].rel").exists());
+	}
+	
+	@Test
+	public void customers_pagination_test() throws Exception{
+		mockMvc.perform(get("/customers?offset=0&limit=10").accept(MediaType.APPLICATION_JSON_VALUE))
+		.andExpect(status().isOk())
+		.andExpect(jsonPath("$.links",hasSize(3)));
+		
+		mockMvc.perform(get("/customers?offset=10&limit=10").accept(MediaType.APPLICATION_JSON_VALUE))
+		.andExpect(status().isOk())
+		.andExpect(jsonPath("$.links",hasSize(4)));
+	}
+	
+	@Test
+	public void customerById_test() throws Exception{
+		mockMvc.perform(get("/customers/121").accept(MediaType.APPLICATION_JSON_VALUE))
+		.andExpect(status().isOk());
+		
+		mockMvc.perform(get("/customers/122").accept(MediaType.APPLICATION_JSON_VALUE))
+		.andExpect(status().isNotFound())
+		.andExpect(content().contentType("application/vnd.error"));
 	}
 }
